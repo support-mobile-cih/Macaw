@@ -414,9 +414,13 @@ open class SVGParser {
         case "use":
             return try parseUse(node, groupStyle: style, place: position)
         case "svg":
-            if let child = node.children.first {
-                return try parseNode(child, groupStyle: style)
+            var nodes = [Node]()
+            try node.children.forEach { indexer in
+                if let child = try parseNode(indexer, groupStyle: style) {
+                    nodes.append(child)
+                }
             }
+            return Group(contents: nodes)
         case "title", "desc", "mask", "clip", "filter",
              "linearGradient", "radialGradient", SVGKeys.fill:
             break
@@ -1119,10 +1123,19 @@ open class SVGParser {
                                    fontSize: Int?,
                                    fontWeight: String?,
                                    bounds: Rect) -> [Node] {
-        let fullString = tspan.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) as NSString
+        var fullString = tspan.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) as NSString
         // exit recursion
         if fullString.isEqual(to: "") {
             return collectedTspans
+        }
+        let titleRange = fullString.range(of: "<title".lowercased())
+        if titleRange.location != NSNotFound {
+            let closingTitleRange = fullString.range(of: "</title>".lowercased())
+
+            let beforeTitleString = fullString.substring(to: titleRange.location)
+            let afterTitleString = fullString.substring(from: closingTitleRange.location + closingTitleRange.length)
+
+            fullString = beforeTitleString + afterTitleString as NSString
         }
         var collection = collectedTspans
         let tagRange = fullString.range(of: "<tspan".lowercased())
