@@ -413,6 +413,10 @@ open class SVGParser {
                              pos: position)
         case "use":
             return try parseUse(node, groupStyle: style, place: position)
+        case "svg":
+            if let child = node.children.first {
+                return try parseNode(child, groupStyle: style)
+            }
         case "title", "desc", "mask", "clip", "filter",
              "linearGradient", "radialGradient", SVGKeys.fill:
             break
