@@ -73,8 +73,10 @@ open class SVGParser {
 
     /// Parse the specified content of an SVG file.
     /// - returns: Root node of the corresponding Macaw scene.
-    open class func parse(text: String) throws -> Node {
-        return try SVGParser(text).parse()
+    open class func parse(text: String, hideTextElements: Bool = false) throws -> Node {
+        let parser = SVGParser(text)
+        parser.hideTextElements = hideTextElements
+        return try parser.parse()
     }
 
     let availableStyleAttributes = ["stroke",
@@ -111,6 +113,7 @@ open class SVGParser {
     fileprivate var defClip = [String: UserSpaceLocus]()
     fileprivate var defEffects = [String: Effect]()
     fileprivate var defPatterns = [String: UserSpacePattern]()
+    fileprivate var hideTextElements: Bool = false
 
     fileprivate var styles = CSSParser()
 
@@ -402,15 +405,15 @@ open class SVGParser {
         case "image":
             return parseImage(node, opacity: getOpacity(style), pos: position, clip: getClipPath(style, locus: nil))
         case "text":
-            return parseText(node,
-                             textAnchor: getTextAnchor(style),
-                             fill: getFillColor(style, groupStyle: style),
-                             stroke: getStroke(style, groupStyle: style),
-                             opacity: getOpacity(style),
-                             fontName: getFontName(style),
-                             fontSize: getFontSize(style),
-                             fontWeight: getFontWeight(style),
-                             pos: position)
+            return hideTextElements ? .none : parseText(node,
+                                                        textAnchor: getTextAnchor(style),
+                                                        fill: getFillColor(style, groupStyle: style),
+                                                        stroke: getStroke(style, groupStyle: style),
+                                                        opacity: getOpacity(style),
+                                                        fontName: getFontName(style),
+                                                        fontSize: getFontSize(style),
+                                                        fontWeight: getFontWeight(style),
+                                                        pos: position)
         case "use":
             return try parseUse(node, groupStyle: style, place: position)
         case "svg":
