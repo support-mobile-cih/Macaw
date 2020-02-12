@@ -141,7 +141,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         self.init(node: Group(), coder: aDecoder)
     }
 
-    func onZoomChange(t: Transform) {
+    public func onZoomChange(t: Transform) {
         placeManager.setZoom(place: t)
         self.setNeedsDisplay()
     }
