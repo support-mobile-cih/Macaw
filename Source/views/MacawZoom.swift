@@ -156,7 +156,7 @@ fileprivate class ZoomData {
         let nodeHeightNotScaled = nodeSize.h * Double(viewSize.width) / nodeSize.w
         let nodeHeight = nodeHeightNotScaled * scale
         let topLimit = (nodeHeight - Double(viewSize.height) * scale) / 2
-        let bottomLimit = ((nodeHeightNotScaled - Double(viewSize.height)) / 2) * scale - (nodeHeight - Double(viewSize.height))
+        let bottomLimit = ((nodeHeightNotScaled - Double(viewSize.height)) / 2) * scale - (nodeHeight - Double(viewSize.height)/2)
 
         let minY = min(topLimit, bottomLimit)
         let maxY = max(topLimit, bottomLimit)
