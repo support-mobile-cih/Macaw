@@ -46,7 +46,7 @@ open class MacawZoom {
         let o = offset ?? zoomData.offset
         let s = scale ?? zoomData.scale
         let a = angle ?? zoomData.angle
-        zoomData = ZoomData(offset: o, scale: s, angle: a)
+        zoomData = ZoomData(offset: o, scale: s, angle: a).combine(with: ZoomData(), in: view)
         onChange(zoomData.transform())
     }
 
