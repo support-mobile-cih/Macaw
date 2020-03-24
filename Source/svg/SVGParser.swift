@@ -1248,7 +1248,8 @@ open class SVGParser {
         let pos = getTspanPosition(element,
                                    bounds: bounds,
                                    previousCollectedTspan: previousCollectedTspan,
-                                   withWhitespace: &shouldAddWhitespace)
+                                   withWhitespace: &shouldAddWhitespace,
+                                   fontSize: fontSize)
         let text = shouldAddWhitespace ? " \(string)" : string
         let attributes = getStyleAttributes([:], element: element)
 
@@ -1276,18 +1277,19 @@ open class SVGParser {
     fileprivate func getTspanPosition(_ element: SWXMLHash.XMLElement,
                                       bounds: Rect,
                                       previousCollectedTspan: Node?,
-                                      withWhitespace: inout Bool) -> Transform {
+                                      withWhitespace: inout Bool,
+                                      fontSize: Int? = nil) -> Transform {
         var xPos: Double = bounds.x + bounds.w
         var yPos: Double = bounds.y
 
-        if let absX = getDoubleValue(element, attribute: "x") {
+        if let absX = getDoubleValue(element, attribute: "x", fontSize: fontSize) {
             xPos = absX
             withWhitespace = false
 
-            if let relX = getDoubleValue(element, attribute: "dx") {
+            if let relX = getDoubleValue(element, attribute: "dx", fontSize: fontSize) {
                 xPos += relX
             }
-        } else if let relX = getDoubleValue(element, attribute: "dx") {
+        } else if let relX = getDoubleValue(element, attribute: "dx", fontSize: fontSize) {
             if let prevTspanX = previousCollectedTspan?.place.dx, let prevTspanW = previousCollectedTspan?.bounds?.w {
                 xPos = prevTspanX + prevTspanW + relX
             } else {
@@ -1295,13 +1297,13 @@ open class SVGParser {
             }
         }
 
-        if let absY = getDoubleValue(element, attribute: "y") {
+        if let absY = getDoubleValue(element, attribute: "y", fontSize: fontSize) {
             yPos = absY
 
-            if let relY = getDoubleValue(element, attribute: "dy") {
+            if let relY = getDoubleValue(element, attribute: "dy", fontSize: fontSize) {
                 yPos += relY
             }
-        } else if let relY = getDoubleValue(element, attribute: "dy") {
+        } else if let relY = getDoubleValue(element, attribute: "dy", fontSize: fontSize) {
             if let prevTspanY = previousCollectedTspan?.place.dy {
                 yPos = prevTspanY + relY
             } else {
@@ -1619,7 +1621,7 @@ open class SVGParser {
         guard let element = stop.element else {
             return .none
         }
-        
+
         var offset: Double = 0 // This is default value, value can be omitted
         if let parsedOffset = getDoubleValueFromPercentage(element, attribute: "offset") {
             offset = parsedOffset
@@ -1655,11 +1657,11 @@ open class SVGParser {
         return .none
     }
 
-    fileprivate func getDoubleValue(_ element: SWXMLHash.XMLElement, attribute: String) -> Double? {
+    fileprivate func getDoubleValue(_ element: SWXMLHash.XMLElement, attribute: String, fontSize: Int? = nil ) -> Double? {
         guard let attributeValue = element.allAttributes[attribute]?.text else {
             return .none
         }
-        return doubleFromString(attributeValue)
+        return doubleFromString(attributeValue, fontSize: fontSize)
     }
 
     fileprivate func getDimensionValue(_ element: SWXMLHash.XMLElement, attribute: String) -> SVGLength? {
@@ -1679,7 +1681,7 @@ open class SVGParser {
         return .none
     }
 
-    fileprivate func doubleFromString(_ string: String) -> Double? {
+    fileprivate func doubleFromString(_ string: String, fontSize: Int? = nil) -> Double? {
         if let doubleValue = Double(string) {
             return doubleValue
         }
@@ -1698,6 +1700,8 @@ open class SVGParser {
             switch unitString {
             case "px" :
                 return value
+            case "em" :
+                return value * Double(fontSize ?? 12) // Use 12 as default font size
             default:
                 print("SVG parsing error. Unit \(unitString) not supported")
                 return value
