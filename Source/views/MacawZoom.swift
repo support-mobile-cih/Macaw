@@ -91,9 +91,15 @@ open class MacawZoom {
         }
         let s2 = touches[1].point
         let e2 = touches[1].current(in: view)
-        let scale = trackScale ? e1.distance(to: e2) / s1.distance(to: s2) : 1
+        var scale = trackScale ? e1.distance(to: e2) / s1.distance(to: s2) : 1
         let a = trackRotate ? (e1 - e2).angle() - (s1 - s2).angle() : 0
         var offset = Size.zero
+
+        //limit scale movement for a proper computing of offset before limiting movement
+        if scale * zoomData.scale > ZoomData.maxScale {
+            scale = ZoomData.maxScale / zoomData.scale
+        }
+
         if trackMove {
             let sina = sin(a)
             let cosa = cos(a)
@@ -111,8 +117,8 @@ fileprivate class ZoomData {
     let scale: Double
     let angle: Double
 
-    private let maxScale: Double = 8
-    private let minScale: Double = 1
+    static let maxScale: Double = 8
+    static let minScale: Double = 1
 
     init(offset: Size = Size.zero, scale: Double = 1, angle: Double = 0) {
         self.offset = offset
@@ -133,10 +139,10 @@ fileprivate class ZoomData {
         let a = angle + with.angle
 
         var newScale = s
-        if newScale > maxScale {
-            newScale = maxScale
-        } else if newScale < minScale {
-            newScale = minScale
+        if newScale > ZoomData.maxScale {
+            newScale = ZoomData.maxScale
+        } else if newScale < ZoomData.minScale {
+            newScale = ZoomData.minScale
         }
 
         let sina = sin(angle)
