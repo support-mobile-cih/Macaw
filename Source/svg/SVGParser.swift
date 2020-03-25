@@ -407,6 +407,7 @@ open class SVGParser {
         case "text":
             return hideTextElements ? .none : parseText(node,
                                                         textAnchor: getTextAnchor(style),
+                                                        baseline: getBaseline(style),
                                                         fill: getFillColor(style, groupStyle: style),
                                                         stroke: getStroke(style, groupStyle: style),
                                                         opacity: getOpacity(style),
@@ -1033,6 +1034,7 @@ open class SVGParser {
 
     fileprivate func parseText(_ text: XMLIndexer,
                                textAnchor: String?,
+                               baseline: String?,
                                fill: Fill?,
                                stroke: Stroke?,
                                opacity: Double,
@@ -1046,6 +1048,7 @@ open class SVGParser {
         if text.children.isEmpty {
             return parseSimpleText(element,
                                    textAnchor: textAnchor,
+                                   baseline: baseline,
                                    fill: fill,
                                    stroke: stroke,
                                    opacity: opacity,
@@ -1065,6 +1068,7 @@ open class SVGParser {
                                 y: getDoubleValue(element, attribute: "y") ?? 0)
                 let collectedTspans = collectTspans(tspans,
                                                     textAnchor: textAnchor,
+                                                    baseline: baseline,
                                                     fill: fill,
                                                     stroke: stroke,
                                                     opacity: opacity,
@@ -1089,8 +1093,20 @@ open class SVGParser {
         return Align.min
     }
 
+    fileprivate func baselineToAlign(_ baseline: String?) -> Baseline {
+        if let base = baseline {
+            if base == "middle" {
+                return .mid
+            } else if base == "hanging" {
+                return .bottom
+            }
+        }
+        return .alphabetic
+    }
+
     fileprivate func parseSimpleText(_ text: SWXMLHash.XMLElement,
                                      textAnchor: String?,
+                                     baseline: String?,
                                      fill: Fill?,
                                      stroke: Stroke?,
                                      opacity: Double,
@@ -1107,7 +1123,7 @@ open class SVGParser {
                     fill: fill,
                     stroke: stroke,
                     align: anchorToAlign(textAnchor),
-                    baseline: .bottom,
+                    baseline: baselineToAlign(baseline),
                     place: position,
                     opacity: opacity,
                     tag: getTag(text))
@@ -1119,6 +1135,7 @@ open class SVGParser {
                                    collectedTspans: [Node] = [],
                                    withWhitespace: Bool = false,
                                    textAnchor: String?,
+                                   baseline: String?,
                                    fill: Fill?,
                                    stroke: Stroke?,
                                    opacity: Double,
@@ -1151,6 +1168,7 @@ open class SVGParser {
                 let text = parseTspan(indexer,
                                       withWhitespace: withWhitespace,
                                       textAnchor: textAnchor,
+                                      baseline: baseline,
                                       fill: fill,
                                       stroke: stroke,
                                       opacity: opacity,
@@ -1164,6 +1182,7 @@ open class SVGParser {
                                         return collectTspans(fullString.substring(from: closingTagRange.location + closingTagRange.length),
                                                              collectedTspans: collectedTspans,
                                                              textAnchor: textAnchor,
+                                                             baseline: baseline,
                                                              fill: fill,
                                                              stroke: stroke,
                                                              opacity: opacity,
@@ -1182,6 +1201,7 @@ open class SVGParser {
                                  collectedTspans: collection,
                                  withWhitespace: withWhitespace,
                                  textAnchor: textAnchor,
+                                 baseline: baseline,
                                  fill: fill,
                                  stroke: stroke,
                                  opacity: opacity,
@@ -1208,7 +1228,7 @@ open class SVGParser {
                         fill: fill,
                         stroke: stroke,
                         align: anchorToAlign(textAnchor),
-                        baseline: .alphabetic,
+                        baseline: baselineToAlign(baseline),
                         place: Transform().move(dx: bounds.x + bounds.w, dy: bounds.y), opacity: opacity)
         collection.append(text)
         if tagRange.location >= fullString.length { // leave recursion
@@ -1218,6 +1238,7 @@ open class SVGParser {
                              collectedTspans: collection,
                              withWhitespace: nextStringWhitespace,
                              textAnchor: textAnchor,
+                             baseline: baseline,
                              fill: fill,
                              stroke: stroke,
                              opacity: opacity,
@@ -1230,6 +1251,7 @@ open class SVGParser {
     fileprivate func parseTspan(_ tspan: XMLIndexer,
                                 withWhitespace: Bool = false,
                                 textAnchor: String?,
+                                baseline: String?,
                                 fill: Fill?,
                                 stroke: Stroke?,
                                 opacity: Double,
@@ -1258,7 +1280,7 @@ open class SVGParser {
                     fill: (attributes[SVGKeys.fill] != nil) ? getFillColor(attributes)! : fill,
                     stroke: stroke ?? getStroke(attributes),
                     align: anchorToAlign(textAnchor ?? getTextAnchor(attributes)),
-                    baseline: .alphabetic,
+                    baseline: baselineToAlign(baseline ?? getBaseline(attributes)),
                     place: pos,
                     opacity: getOpacity(attributes),
                     tag: getTag(element))
@@ -1819,6 +1841,13 @@ open class SVGParser {
 
     fileprivate func getTextAnchor(_ attributes: [String: String]) -> String? {
         guard let textAnchor = attributes["text-anchor"] else {
+            return .none
+        }
+        return textAnchor
+    }
+
+    fileprivate func getBaseline(_ attributes: [String: String]) -> String? {
+        guard let textAnchor = attributes["dominant-baseline"] else {
             return .none
         }
         return textAnchor
