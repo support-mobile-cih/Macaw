@@ -170,7 +170,7 @@ open class SVGParser {
         if let element = node.element {
             if element.name == "style" {
                 parseStyle(node)
-            } else if element.name == "defs" || element.name == "g" {
+            } else if element.name == "defs" || element.name == "g" || element.name == "svg" {
                 try node.children.forEach { child in
                     try prepareSvg(child)
                 }
@@ -651,6 +651,42 @@ open class SVGParser {
                          b: Int(blue.rounded(.up)))
     }
 
+    /// Parse an RGBA
+       /// - returns: Color for the corresponding SVG color string in RGBA notation.
+       fileprivate func parseRGBANotation(colorString: String) -> Color {
+           let from = colorString.index(colorString.startIndex, offsetBy: 5)
+           let inPercentage = colorString.contains("%")
+           let sp = String(colorString.suffix(from: from))
+               .replacingOccurrences(of: "%", with: "")
+               .replacingOccurrences(of: ")", with: "")
+               .replacingOccurrences(of: " ", with: "")
+           let x = sp.components(separatedBy: ",")
+           var red = 0.0
+           var green = 0.0
+           var blue = 0.0
+           var alpha = 0.0
+           if x.count == 4 {
+            if let r = Double(x[0]), let g = Double(x[1]), let b = Double(x[2]), let a = Double(x[3]) {
+                blue = b
+                green = g
+                red = r
+                alpha = a
+            }
+           }
+        if let a = Double(x[3]) {
+           if inPercentage {
+               red *= 2.55
+               green *= 2.55
+               blue *= 2.55
+            alpha = a
+           }
+        }
+           return Color.rgba(r: Int(red.rounded(.up)),
+                            g: Int(green.rounded(.up)),
+                            b: Int(blue.rounded(.up)),
+                            a: alpha)
+       }
+
     fileprivate func parseTransformValues(_ values: String, collectedValues: [String] = []) -> [String] {
         guard let matcher = SVGParserRegexHelper.getTransformMatcher() else {
             return collectedValues
@@ -733,7 +769,12 @@ open class SVGParser {
             let color = Color(val: systemColor)
             return opacity != 1 ? color.with(a: opacity) : color
         }
-        if colorString.hasPrefix("rgb") {
+
+        if colorString.hasPrefix("rgba") {
+           let color = parseRGBANotation(colorString: colorString)
+            return opacity != 1 ? color.with(a: opacity) : color
+        }
+        else if colorString.hasPrefix("rgb") {
             let color = parseRGBNotation(colorString: colorString)
             return opacity != 1 ? color.with(a: opacity) : color
         }

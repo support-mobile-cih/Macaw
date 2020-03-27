@@ -171,7 +171,7 @@ open class Color: Fill {
     }
 
     public func with(a: Double) -> Color {
-        return Color.rgba(r: r(), g: g(), b: b(), a: a)
+        return Color.rgba(r: r(), g: g(), b: b(), a: a * Double(self.a()) / 255.0)
     }
 
     open class func rgbt(r: Int, g: Int, b: Int, t: Int) -> Color {
