@@ -156,13 +156,23 @@ fileprivate class ZoomData {
     func limitOffset(offset: Size, in view:MacawView, with scale: Double) -> Size {
         let viewSize = view.bounds.size
         let nodeSize = view.node.bounds?.size() ?? Size.zero
+        let scaleX = Double(viewSize.width) / nodeSize.w
+        let scaleY =  Double(viewSize.height) / nodeSize.h
+        let viewScale = min(scaleX, scaleY)
 
-        let maxX: Double = 0
-        let minX = Double(viewSize.width) - Double(viewSize.width) * scale
-        let nodeHeightNotScaled = nodeSize.h * Double(viewSize.width) / nodeSize.w
+        let nodeWidthNotScaled = nodeSize.w * viewScale
+        let nodeWidth = nodeWidthNotScaled * scale
+        let leftLimit = (nodeWidth - Double(viewSize.width) * scale) / 2
+        let rightLimit = ((nodeWidthNotScaled - Double(viewSize.width)) / 2) * scale - (nodeWidth - Double(viewSize.width))
+
+
+        let nodeHeightNotScaled = nodeSize.h * viewScale
         let nodeHeight = nodeHeightNotScaled * scale
         let topLimit = (nodeHeight - Double(viewSize.height) * scale) / 2
         let bottomLimit = ((nodeHeightNotScaled - Double(viewSize.height)) / 2) * scale - (nodeHeight - Double(viewSize.height)/2)
+
+        let maxX = max(leftLimit, rightLimit)
+        let minX = min(leftLimit, rightLimit)
 
         let minY = min(topLimit, bottomLimit)
         let maxY = max(topLimit, bottomLimit)
